@@ -26,6 +26,7 @@ var URL string
 var FILE string
 var Proxy string
 var Timeout int
+var Debug bool
 
 // 多线程信号量
 var Semaphore *gsema.Semaphore
@@ -39,6 +40,7 @@ func usage() {
 	flag.StringVar(&FILE, "file", "", "要检查的URL文件列表")
 	flag.StringVar(&Proxy, "proxy", "", "代理，如socks5://127.0.0.1:1080")
 	flag.IntVar(&Timeout, "timeout", 3, "超时时间")
+	flag.BoolVar(&Debug, "debug", false, "显示错误信息")
 	flag.Parse()
 
 	flag.Usage = func() {
@@ -102,17 +104,23 @@ func doReq(uri string) {
 	defer Semaphore.Done()
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		//fmt.Println(err)
+		if Debug {
+			fmt.Println(err)
+		}
 	} else {
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.61 Safari/537.36")
 		do, err := HttpClient.Do(req)
 		if err != nil {
-			//fmt.Println(err)
+			if Debug {
+				fmt.Println(err)
+			}
 		} else {
 			body := do.Body
 			res, err := ioutil.ReadAll(body)
 			if err != nil {
-				// fmt.Println(err)
+				if Debug {
+					fmt.Println(err)
+				}
 			} else {
 				// 匹配title
 				htmlSource := string(res)
