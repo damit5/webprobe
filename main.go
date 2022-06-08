@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"github.com/EDDYCJY/gsema"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/EDDYCJY/gsema"
 )
 
 // http客户端
@@ -111,7 +112,7 @@ func doReq(uri string) {
 			body := do.Body
 			res, err := ioutil.ReadAll(body)
 			if err != nil {
-				fmt.Println(err)
+				// fmt.Println(err)
 			} else {
 				// 匹配title
 				htmlSource := string(res)
