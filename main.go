@@ -66,7 +66,8 @@ func initClient() {
 	var tr *http.Transport
 	if Proxy == "" {
 		tr = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 忽略SSL证书
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true}, // 忽略SSL证书
+			DisableKeepAlives: true,
 		}
 	} else {
 		proxy, _ := url.Parse(Proxy)
@@ -75,6 +76,7 @@ func initClient() {
 			MaxIdleConnsPerHost:   20,
 			ResponseHeaderTimeout: time.Second * time.Duration(Timeout),
 			TLSClientConfig:       &tls.Config{InsecureSkipVerify: true}, // 忽略SSL证书
+			DisableKeepAlives:     true,
 		}
 	}
 
@@ -101,21 +103,25 @@ func parseTarget(uri string) []string {
 发起GET请求，获取title，内部调用
 */
 func doReq(uri string) {
-	defer Semaphore.Done()
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		if Debug {
 			fmt.Println(err)
 		}
 	} else {
+		// header 设置
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.61 Safari/537.36")
-		do, err := HttpClient.Do(req)
+		// 发起请求
+		response, err := HttpClient.Do(req)
+
 		if err != nil {
 			if Debug {
 				fmt.Println(err)
 			}
 		} else {
-			body := do.Body
+			// close body
+			defer response.Body.Close()
+			body := response.Body
 			res, err := ioutil.ReadAll(body)
 			if err != nil {
 				if Debug {
@@ -135,8 +141,8 @@ func doReq(uri string) {
 				fmt.Printf("%s %s\n", uri, title)
 			}
 		}
-
 	}
+	defer Semaphore.Done()
 }
 
 /*
@@ -156,23 +162,29 @@ func scanTarget() error {
 		if err != nil {
 			return err
 		}
+
 		buf := bufio.NewReader(f)
 		for {
 			line, _, err := buf.ReadLine()
-			target := string(line) // 每一个域名
-			if strings.Trim(target, " ") != "" {
-				// 开始探测
-				for _, uri := range parseTarget(target) {
-					Semaphore.Add(1)
-					go doReq(uri) // 启动
-				}
-			}
+
 			if err != nil {
 				if err == io.EOF {
 					Semaphore.Wait()
 					return nil
 				}
 				return err
+			}
+
+			target := string(line) // 每一个域名
+			if strings.TrimSpace(target) != "" {
+				// 开始探测
+				for _, uri := range parseTarget(target) {
+					if Debug {
+						fmt.Println("testing url: ", uri)
+					}
+					Semaphore.Add(1)
+					go doReq(uri) // 启动
+				}
 			}
 		}
 	}

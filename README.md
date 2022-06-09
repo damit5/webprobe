@@ -92,3 +92,41 @@ httpx -l testtarget.txt -t 100 -p http:80,https:443 -title  0.41s user 0.65s sys
 ./ehole_test finger -l testtarget.txt --thread 100  0.41s user 0.40s system 4% cpu 20.032 total
 ```
 
+## 坑点
+
+### 数据包问题
+
+公司的网络环境在经过网关的时候会自动加上奇怪的header头，调试了半天，还以为是GO的问题，还好破案了，太坑了
+
+![image-20220609133942962](README.assets/image-20220609133942962.png)
+
+
+
+正常情况下，该工具的数据包应该长这样
+
+![image-20220609143514534](README.assets/image-20220609143514534.png)
+
+### DNS问题
+
+有时候并发太大了，会出现 `dial tcp: lookup xxxxxxx no such host` 这种DNS类的问题，linux下修改 `/etc/resolv.conf`，改一下DNS服务器的地址可能就行了
+
+```shell
+# 腾讯
+119.29.29.29
+182.254.116.116
+
+# 114DNS
+114.114.114.114
+114.114.114.115
+
+# 阿里
+223.5.5.5
+223.6.6.6
+
+# Google
+8.8.8.8
+8.8.4.4
+```
+
+
+
