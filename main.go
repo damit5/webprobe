@@ -130,6 +130,7 @@ func doReq(uri string) {
 			} else {
 				// 匹配title
 				htmlSource := string(res)
+				bodyLen := len(htmlSource)
 				titleRegex := regexp.MustCompile("(?i)<title>((?s).*?)</title>")
 				titleList := titleRegex.FindStringSubmatch(htmlSource)
 				var title string
@@ -138,7 +139,7 @@ func doReq(uri string) {
 				} else {
 					title = ""
 				}
-				fmt.Printf("%s %s\n", uri, title)
+				fmt.Printf("%s %d %s\n", uri, bodyLen, title)
 			}
 		}
 	}
